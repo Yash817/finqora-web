@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -138,7 +139,7 @@
             class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000">
         </div>
 
-        <div id="app-content" class="w-full max-w-2xl z-10 w-full">
+        <div id="app-content" class="w-full max-w-2xl z-10">
             <!-- Content will be injected here via JS -->
         </div>
 
@@ -232,7 +233,7 @@
                 </div>
             `,
             auth: `
-                <div class="glass-card w-full max-w-md rounded-2xl p-7 sm:p-10 animate-slide-up">
+                <div class="glass-card w-full max-w-md rounded-2xl p-7 sm:p-10 animate-slide-up mx-auto">
                     <div class="w-16 h-16 bg-brand-100 text-brand-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 shadow-sm">
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
@@ -276,7 +277,7 @@
                 </div>
             `,
             forgotPassword: `
-                <div class="glass-card w-full max-w-md rounded-2xl p-7 sm:p-10 animate-slide-up text-center">
+                <div class="glass-card w-full max-w-md rounded-2xl p-7 sm:p-10 animate-slide-up text-center mx-auto">
                     <div class="w-16 h-16 bg-brand-100 text-brand-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6">
                         <i class="fa-solid fa-key"></i>
                     </div>
@@ -293,7 +294,7 @@
                 </div>
             `,
             welcome: `
-                <div class="glass-card rounded-2xl p-8 sm:p-10 text-center animate-slide-up">
+                <div class="glass-card rounded-2xl p-8 sm:p-10 text-center animate-slide-up mx-auto">
                     <div class="w-16 h-16 bg-brand-100 text-brand-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 shadow-sm">
                         <i class="fa-solid fa-rocket"></i>
                     </div>
@@ -384,7 +385,7 @@
                 </div>
             `,
             dashboard: `
-                <div class="animate-slide-up space-y-6">
+                <div class="animate-slide-up space-y-6 w-full">
                     <!-- Welcome Card -->
                     <div class="glass-card rounded-2xl p-6 sm:p-8 border-t-4 border-t-brand-500">
                         <div class="flex items-start justify-between flex-wrap gap-4">
@@ -409,7 +410,7 @@
                                 </div>
                                 <div>
                                     <h3 class="font-bold text-slate-900">Android Beta</h3>
-                                    <p class="text-xs text-slate-500">Version 1.0.0-beta1 • 14.2 MB</p>
+                                    <p class="text-xs text-slate-500">Version 1.0.0-beta1 • ~15 MB</p>
                                 </div>
                             </div>
                             <button onclick="downloadApp('android')" class="w-full border-2 border-brand-500 text-brand-600 hover:bg-brand-50 font-medium py-2.5 rounded-lg transition-colors flex justify-center items-center gap-2">
@@ -453,7 +454,7 @@
                             </div>
                             <div class="flex gap-3">
                                 <div class="w-6 h-6 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold shrink-0">4</div>
-                                <p><strong>Report Bugs:</strong> If you experience crashes, take a screenshot and note what you were doing. <a href="#" class="text-brand-600 hover:underline">Submit feedback here.</a></p>
+                                <p><strong>Report Bugs:</strong> If you experience crashes, take a screenshot and note what you were doing on our WhatsApp channel.</p>
                             </div>
                         </div>
                     </div>
@@ -691,6 +692,7 @@
                 userProfile = profileData;
                 updateNav();
 
+                // Download Excel File
                 const worksheet = XLSX.utils.json_to_sheet([profileData]);
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, 'FINQORA Beta Application');
@@ -706,16 +708,21 @@
                 downloadLink.remove();
                 setTimeout(() => URL.revokeObjectURL(downloadLink.href), 1000);
 
+                // Setup WhatsApp Link
                 const whatsappMessage = encodeURIComponent(
                     `Hello FINQORA, my beta application has been submitted.\n\nName: ${name}\nEmail: ${email}\nCity: ${city || 'Not provided'}\nAddress: ${address || 'Not provided'}\nRelation: ${relation}\nReason: ${reason}`
                 );
                 const whatsappUrl = `https://wa.me/919120920817?text=${whatsappMessage}`;
 
-                showToast("Application submitted, Excel downloaded, and WhatsApp opened.", "success");
-                setTimeout(() => {
-                    window.location.href = whatsappUrl;
-                }, 1200);
+                showToast("Application submitted successfully!", "success");
+                
+                // Show dashboard instantly
                 renderUI('dashboard');
+
+                // Open WhatsApp in a NEW tab so the user doesn't leave the dashboard
+                setTimeout(() => {
+                    window.open(whatsappUrl, '_blank');
+                }, 1200);
 
             } catch (error) {
                 console.error("Error saving survey:", error);
@@ -725,14 +732,17 @@
             }
         };
 
-        // Make functions globally available for inline HTML handlers
+        // NEW: MediaFire Link added here
         window.downloadApp = (platform) => {
             if (platform === 'android') {
-                showToast("Downloading FINQORA Beta APK...", "info");
-                // Mock download action
+                showToast("Starting download...", "info");
+                
+                const apkUrl = "https://www.mediafire.com/file/uoyew0i28kymcl4/Finqora-v1.0.0-Release.apk/file";
+                
                 setTimeout(() => {
-                    showToast("Download started.", "success");
-                }, 1000);
+                    window.open(apkUrl, '_blank'); 
+                    showToast("Redirecting to MediaFire...", "success");
+                }, 800);
             }
         };
 
@@ -813,7 +823,7 @@
             }, 6500);
         });
 
-        // Bootstrap with FIX
+        // Bootstrap with Race Condition FIX
         window.onload = async () => {
             await runCinematicPreloader();
             
@@ -832,3 +842,5 @@
 </body>
 
 </html>
+
+```
