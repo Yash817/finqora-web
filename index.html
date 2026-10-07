@@ -106,6 +106,66 @@
             flex-direction: column;
             gap: 10px;
         }
+
+        #cinematic-preloader {
+            transition: opacity 450ms ease;
+        }
+
+        #cinematic-preloader.is-ready {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @keyframes preloader-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes preloader-pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.12);
+                opacity: 1;
+            }
+        }
+
+        @keyframes preloader-progress {
+            from {
+                transform: translateX(-120%);
+            }
+
+            to {
+                transform: translateX(360%);
+            }
+        }
+
+        .preloader-ring {
+            animation: preloader-spin 1.4s linear infinite;
+        }
+
+        .preloader-mark {
+            animation: preloader-pulse 1.8s ease-in-out infinite;
+        }
+
+        .preloader-progress-segment {
+            animation: preloader-progress 1.5s ease-in-out infinite;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .preloader-ring,
+            .preloader-mark,
+            .preloader-progress-segment {
+                animation-duration: 4s;
+            }
+        }
     </style>
 </head>
 
@@ -144,9 +204,35 @@
 
     </main>
 
-    <footer class="bg-white border-t border-slate-200 py-6 text-center text-sm text-slate-500">
-        <p>&copy; 2026 FINQORA Technologies. All rights reserved.</p>
-        <p class="mt-1 text-xs text-slate-400">Privacy-First Personal Finance</p>
+    <footer class="bg-slate-950 text-slate-300 border-t border-slate-800 py-8 px-4 sm:px-6">
+        <div class="max-w-5xl mx-auto grid gap-8 sm:grid-cols-2 text-left">
+            <section>
+                <h2 class="text-white font-semibold text-lg mb-2">About the Developer</h2>
+                <p class="text-sm leading-6 text-slate-400">
+                    Yash Prajapati is a freelance web developer and B.Com student preparing for Chartered Accountancy.
+                    He combines financial insight with web development to create business-focused digital experiences.
+                </p>
+                <p class="mt-3 text-xs text-slate-500">3+ years of experience · 20+ projects · 100% commitment</p>
+            </section>
+            <section>
+                <h2 class="text-white font-semibold text-lg mb-2">Developer Contact · Yash</h2>
+                <div class="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                    <a class="hover:text-white transition-colors" href="https://pixcelyash.space/" target="_blank"
+                        rel="noopener noreferrer">
+                        <i class="fa-solid fa-globe mr-1.5" aria-hidden="true"></i>Website
+                    </a>
+                    <a class="hover:text-white transition-colors"
+                        href="https://www.instagram.com/yash.mme?stkn=aXdmeXdkM3BvMmt4" target="_blank"
+                        rel="noopener noreferrer">
+                        <i class="fa-brands fa-instagram mr-1.5" aria-hidden="true"></i>Instagram
+                    </a>
+                </div>
+            </section>
+        </div>
+        <div class="max-w-5xl mx-auto mt-7 pt-4 border-t border-slate-800 text-center text-xs text-slate-500">
+            <p>&copy; 2026 FINQORA Technologies. All rights reserved.</p>
+            <p class="mt-1">Privacy-First Personal Finance</p>
+        </div>
     </footer>
 
     <div id="loading-overlay"
@@ -157,21 +243,19 @@
 
     <div id="toast-container"></div>
 
-    <div id="cinematic-preloader"
-        class="fixed inset-0 z-[200] bg-black flex items-center justify-center overflow-hidden transition-opacity duration-1000">
-        <div id="preloader-finqora"
-            class="absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-1000">
+    <div id="cinematic-preloader" role="status" aria-live="polite"
+        class="fixed inset-0 z-[200] bg-slate-950 flex flex-col items-center justify-center overflow-hidden text-white">
+        <div class="relative w-28 h-28 flex items-center justify-center mb-8" aria-hidden="true">
+            <div
+                class="preloader-ring absolute inset-0 rounded-full border-2 border-brand-500/20 border-t-brand-400 border-r-brand-300">
+            </div>
             <i
-                class="fa-solid fa-shield-halved text-6xl text-brand-500 mb-6 drop-shadow-[0_0_15px_rgba(20,184,166,0.6)]"></i>
-            <h1 class="text-4xl sm:text-5xl font-bold tracking-[0.3em] text-white">FINQORA</h1>
+                class="preloader-mark fa-solid fa-shield-halved text-4xl text-brand-400 drop-shadow-[0_0_18px_rgba(20,184,166,0.7)]"></i>
         </div>
-
-        <div id="preloader-yash"
-            class="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-1000">
-            <p class="text-xl sm:text-2xl font-light tracking-widest text-slate-300 flex items-center gap-4">
-                MADE BY YASH
-                <i class="fa-solid fa-mug-hot text-amber-700 text-2xl drop-shadow-[0_0_10px_rgba(180,83,9,0.4)]"></i>
-            </p>
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-[0.25em]">FINQORA</h1>
+        <p class="mt-3 text-sm text-slate-400">Preparing your secure portal</p>
+        <div class="mt-7 h-1 w-48 overflow-hidden rounded-full bg-slate-800" aria-hidden="true">
+            <div class="preloader-progress-segment h-full w-1/3 rounded-full bg-brand-400"></div>
         </div>
     </div>
 
@@ -694,7 +778,7 @@
                         new Promise((_, reject) => {
                             saveTimeoutId = setTimeout(
                                 () => reject(new Error('Application save timed out. Check your internet connection and try again.')),
-                                20000
+                                10000
                             );
                         })
                     ]);
@@ -704,21 +788,25 @@
                 userProfile = profileData;
                 updateNav();
 
-                // Download Excel File
-                const worksheet = XLSX.utils.json_to_sheet([profileData]);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, 'FINQORA Beta Application');
-                const excelData = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-                const excelBlob = new Blob([excelData], {
-                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                });
-                const downloadLink = document.createElement('a');
-                downloadLink.href = URL.createObjectURL(excelBlob);
-                downloadLink.download = `FINQORA_Beta_Application_${name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.xlsx`;
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                downloadLink.remove();
-                setTimeout(() => URL.revokeObjectURL(downloadLink.href), 1000);
+                // Spreadsheet export is optional and must not block a saved application.
+                try {
+                    const worksheet = XLSX.utils.json_to_sheet([profileData]);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, 'FINQORA Beta Application');
+                    const excelData = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                    const excelBlob = new Blob([excelData], {
+                        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    });
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = URL.createObjectURL(excelBlob);
+                    downloadLink.download = `FINQORA_Beta_Application_${name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.xlsx`;
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    downloadLink.remove();
+                    setTimeout(() => URL.revokeObjectURL(downloadLink.href), 1000);
+                } catch (exportError) {
+                    console.warn('Application saved, but spreadsheet export failed:', exportError);
+                }
 
                 // Setup WhatsApp Link
                 const whatsappMessage = encodeURIComponent(
@@ -738,9 +826,20 @@
 
             } catch (error) {
                 console.error("Error saving survey:", error);
-                showToast(error.message.includes('timed out')
-                    ? error.message
-                    : "Failed to submit. Please check your connection and try again.", "error");
+                const errorCode = error?.code;
+                const message = error?.message || '';
+                const isNetworkError = navigator.onLine === false
+                    || /network|offline|timed out|timeout|unavailable|deadline-exceeded/i.test(`${errorCode} ${message}`);
+                if (isNetworkError) {
+                    const supportMessage = encodeURIComponent(
+                        `Hello Yash, my FINQORA beta application could not be submitted because of a network error. Please help me complete it.\n\nName: ${name}\nEmail: ${email}\nCity: ${city || 'Not provided'}\nAddress: ${address || 'Not provided'}\nRelation: ${relation}\nReason: ${reason}`
+                    );
+                    window.location.assign(`https://wa.me/919120920817?text=${supportMessage}`);
+                } else if (errorCode === 'permission-denied') {
+                    showToast("Your application could not be saved due to a permission issue. Please contact support.", "error");
+                } else {
+                    showToast("Failed to submit. Please try again.", "error");
+                }
             } finally {
                 hideLoading();
             }
@@ -776,89 +875,72 @@
         });
 
         let authStateInitialized = false;
+        let initialScreenReady = false;
+        let pageLoaded = document.readyState === 'complete';
+
+        const finishInitialLoading = () => {
+            if (!pageLoaded || !initialScreenReady) return;
+            const preloader = document.getElementById('cinematic-preloader');
+            if (preloader.classList.contains('is-ready')) return;
+            preloader.classList.add('is-ready');
+            setTimeout(() => {
+                preloader.style.display = 'none';
+            }, 450);
+        };
+
         const loadingTimeout = setTimeout(() => {
-            if (authStateInitialized || !firebaseReady) return;
+            if (initialScreenReady || !firebaseReady) return;
+            authStateInitialized = true;
+            initialScreenReady = true;
             hideLoading();
             renderUI('auth');
             showToast("Authentication is taking too long. Please check your internet connection.", "info");
+            finishInitialLoading();
         }, 15000);
 
         if (firebaseReady) {
             onAuthStateChanged(auth, async (user) => {
                 authStateInitialized = true;
-                clearTimeout(loadingTimeout);
 
                 if (user) {
                     currentUser = user;
                     try {
                         await checkExistingProfile(user.uid);
                     } finally {
+                        clearTimeout(loadingTimeout);
                         hideLoading();
+                        initialScreenReady = true;
+                        finishInitialLoading();
                     }
                 } else {
+                    clearTimeout(loadingTimeout);
                     currentUser = null;
                     userProfile = null;
                     updateNav();
                     hideLoading();
                     renderUI('auth');
+                    initialScreenReady = true;
+                    finishInitialLoading();
                 }
             });
         }
 
         window.addEventListener('beforeunload', () => clearTimeout(loadingTimeout));
 
-        const runCinematicPreloader = () => new Promise((resolve) => {
-            const container = document.getElementById('cinematic-preloader');
-            const finqora = document.getElementById('preloader-finqora');
-            const yash = document.getElementById('preloader-yash');
-
-            container.style.transitionDuration = '300ms';
-            finqora.style.transitionDuration = '300ms';
-            yash.style.transitionDuration = '300ms';
-
-            setTimeout(() => {
-                finqora.style.opacity = '1';
-            }, 100);
-
-            setTimeout(() => {
-                finqora.style.opacity = '0';
-            }, 700);
-
-            setTimeout(() => {
-                yash.style.opacity = '1';
-            }, 900);
-
-            setTimeout(() => {
-                yash.style.opacity = '0';
-            }, 1450);
-
-            setTimeout(() => {
-                container.style.opacity = '0';
-                setTimeout(() => {
-                    container.style.display = 'none';
-                    resolve();
-                }, 300);
-            }, 1700);
-        });
-
-        // Bootstrap with Race Condition FIX
-        window.onload = async () => {
-            await runCinematicPreloader();
+        window.addEventListener('load', () => {
+            pageLoaded = true;
 
             if (!firebaseReady) {
                 renderUI('auth');
                 hideLoading();
-                return;
+                initialScreenReady = true;
             }
 
-            if (!authStateInitialized) {
-                renderUI('loading');
-            }
-        };
+            if (firebaseReady && !authStateInitialized) renderUI('loading');
+            finishInitialLoading();
+        });
 
     </script>
 </body>
 
 </html>
-
-```
