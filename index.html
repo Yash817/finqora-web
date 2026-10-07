@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FINQORA | Beta Testing Portal</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            900: '#134e4a',
+                            950: '#042f2e',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+            transition: all 0.2s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #14b8a6;
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
+            background-color: #ffffff;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2 text-brand-600 font-bold text-xl tracking-tight">
+                <i class="fa-solid fa-shield-halved"></i>
+                FINQORA
+                <span
+                    class="text-xs font-semibold bg-brand-100 text-brand-600 px-2 py-0.5 rounded-full ml-2">BETA</span>
+            </div>
+            <div id="nav-user-info" class="hidden flex items-center gap-4 text-sm font-medium text-slate-600">
+                <span id="nav-email"></span>
+                <button id="logout-btn" class="text-slate-400 hover:text-slate-700 transition-colors">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+
+        <!-- Background decorative elements -->
+        <div
+            class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-brand-100 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob">
+        </div>
+        <div
+            class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000">
+        </div>
+
+        <div id="app-content" class="w-full max-w-2xl z-10 w-full">
+            <!-- Content will be injected here via JS -->
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-sm text-slate-500">
+        <p>&copy; 2026 FINQORA Technologies. All rights reserved.</p>
+        <p class="mt-1 text-xs text-slate-400">Privacy-First Personal Finance</p>
+    </footer>
+
+    <div id="loading-overlay"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex flex-col items-center justify-center hidden text-white">
+        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-brand-500 mb-4"></i>
+        <p id="loading-text" class="font-medium text-lg">Initializing securely...</p>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <div id="cinematic-preloader"
+        class="fixed inset-0 z-[200] bg-black flex items-center justify-center overflow-hidden transition-opacity duration-1000">
+        <div id="preloader-finqora"
+            class="absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-1000">
+            <i
+                class="fa-solid fa-shield-halved text-6xl text-brand-500 mb-6 drop-shadow-[0_0_15px_rgba(20,184,166,0.6)]"></i>
+            <h1 class="text-4xl sm:text-5xl font-bold tracking-[0.3em] text-white">FINQORA</h1>
+        </div>
+
+        <div id="preloader-yash"
+            class="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-1000">
+            <p class="text-xl sm:text-2xl font-light tracking-widest text-slate-300 flex items-center gap-4">
+                MADE BY YASH
+                <i class="fa-solid fa-mug-hot text-amber-700 text-2xl drop-shadow-[0_0_10px_rgba(180,83,9,0.4)]"></i>
+            </p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import {
+            getAuth,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            onAuthStateChanged,
+            signOut,
+            updateProfile,
+            sendPasswordResetEmail,
+            GoogleAuthProvider,
+            signInWithPopup
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = 'finqora-web';
+        const firebaseConfig = {
+            apiKey: "AIzaSyByW4B0naBt93tRwsr-IAafpUQaKPIrP7Y",
+            authDomain: "finqora-web.firebaseapp.com",
+            projectId: "finqora-web",
+            storageBucket: "finqora-web.firebasestorage.app",
+            messagingSenderId: "1090835824721",
+            appId: "1:1090835824721:web:923f796e29ed8af9837870",
+            measurementId: "G-ZJGVHELG67"
+        };
+
+        let app;
+        let db;
+        let auth;
+        let googleProvider;
+        let firebaseReady = false;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            googleProvider = new GoogleAuthProvider();
+            firebaseReady = true;
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+            firebaseReady = false;
+            document.getElementById('loading-text').innerText = "Firebase could not initialize. Check your internet connection and refresh.";
+        }
+
+        // App State
+        let currentUser = null;
+        let userProfile = null;
+        let authName = '';
+
+        const templates = {
+            loading: `
+                <div class="flex flex-col items-center justify-center py-20 text-slate-500 animate-fade-in">
+                    <i class="fa-solid fa-spinner fa-spin text-4xl text-brand-500 mb-4"></i>
+                    <p>Loading your portal...</p>
+                </div>
+            `,
+            auth: `
+                <div class="glass-card w-full max-w-md rounded-2xl p-7 sm:p-10 animate-slide-up">
+                    <div class="w-16 h-16 bg-brand-100 text-brand-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 shadow-sm">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-slate-900 text-center mb-2">Welcome to FINQORA</h1>
+                    <p class="text-slate-500 text-center mb-8">Sign in to continue your beta application.</p>
+
+                    <form id="auth-form" class="space-y-5">
+                        <div id="auth-name-group" class="hidden">
+                            <label for="auth-name" class="block text-sm font-medium text-slate-700 mb-1">Full name *</label>
+                            <input id="auth-name" type="text" autocomplete="name" maxlength="80" class="input-field" placeholder="e.g. Rahul Sharma">
+                        </div>
+                        <div>
+                            <label for="auth-email" class="block text-sm font-medium text-slate-700 mb-1">Email address</label>
+                            <input id="auth-email" type="email" autocomplete="email" required class="input-field" placeholder="you@example.com">
+                        </div>
+                        <div>
+                            <label for="auth-password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                            <input id="auth-password" type="password" autocomplete="current-password" minlength="6" required class="input-field" placeholder="At least 6 characters">
+                        </div>
+                        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-3.5 px-4 rounded-lg transition-all shadow-md hover:shadow-lg">
+                            Sign in
+                        </button>
+                    </form>
+
+                    <div class="flex items-center gap-3 my-6 text-xs font-medium uppercase tracking-wide text-slate-400">
+                        <span class="h-px flex-1 bg-slate-200"></span>
+                        Or continue with
+                        <span class="h-px flex-1 bg-slate-200"></span>
+                    </div>
+                    <button id="google-login-btn" type="button" class="w-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-3 shadow-sm">
+                        <i class="fa-brands fa-google text-xl"></i>
+                        Continue with Google
+                    </button>
+
+                    <p class="text-center text-sm text-slate-500 mt-6">
+                        New to FINQORA?
+                        <button id="auth-switch-btn" type="button" class="text-brand-600 font-semibold hover:underline">Create an account</button>
+                    </p>
+                    <button id="forgot-password-btn" type="button" class="text-brand-600 text-sm font-semibold hover:underline mt-3 block w-full">Forgot password?</button>
+                    <p id="auth-help" class="text-center text-xs text-slate-400 mt-4">Use 6 or more characters for your password.</p>
+                </div>
+            `,
+            forgotPassword: `
+                <div class="glass-card w-full max-w-md rounded-2xl p-7 sm:p-10 animate-slide-up text-center">
+                    <div class="w-16 h-16 bg-brand-100 text-brand-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6">
+                        <i class="fa-solid fa-key"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-slate-900 mb-2">Reset your password</h1>
+                    <p class="text-slate-500 mb-6">Enter your email and we will send a secure password reset link.</p>
+                    <form id="forgot-password-form" class="space-y-5 text-left">
+                        <div>
+                            <label for="forgot-email" class="block text-sm font-medium text-slate-700 mb-1">Email address</label>
+                            <input id="forgot-email" type="email" autocomplete="email" required class="input-field" placeholder="you@example.com">
+                        </div>
+                        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-3.5 px-4 rounded-lg transition-all shadow-md">Send reset email</button>
+                    </form>
+                    <button id="back-to-login-btn" type="button" class="text-brand-600 text-sm font-semibold hover:underline mt-5">Back to sign in</button>
+                </div>
+            `,
+            welcome: `
+                <div class="glass-card rounded-2xl p-8 sm:p-10 text-center animate-slide-up">
+                    <div class="w-16 h-16 bg-brand-100 text-brand-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 shadow-sm">
+                        <i class="fa-solid fa-rocket"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-slate-900 mb-4">Join the FINQORA Beta</h1>
+                    <p class="text-slate-600 mb-8 leading-relaxed max-w-lg mx-auto">
+                        Help us shape the future of privacy-first personal finance in India. 
+                        As a beta tester, you'll get early access to our zero-data-collection budgeting engine.
+                    </p>
+                    
+                    <div class="bg-slate-50 rounded-xl p-6 mb-8 text-left border border-slate-100">
+                        <h3 class="font-semibold text-slate-800 mb-3"><i class="fa-solid fa-lock text-brand-500 mr-2"></i> Tester Requirements</h3>
+                        <ul class="space-y-2 text-sm text-slate-600">
+                            <li><i class="fa-solid fa-check text-green-500 mr-2 w-4"></i> Agree to keep beta features confidential</li>
+                            <li><i class="fa-solid fa-check text-green-500 mr-2 w-4"></i> Provide constructive feedback on UI/UX</li>
+                            <li><i class="fa-solid fa-check text-green-500 mr-2 w-4"></i> Understand data may be reset before V1 public launch</li>
+                        </ul>
+                    </div>
+
+                    <button id="start-application-btn" class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 px-8 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                        Start Application Process
+                    </button>
+                </div>
+            `,
+            survey: `
+                <div class="glass-card rounded-2xl p-8 sm:p-10 animate-slide-up text-left">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-slate-900">Create Tester Account</h2>
+                        <p class="text-slate-500 mt-1">Please complete this short survey to access the FINQORA beta.</p>
+                    </div>
+
+                    <form id="beta-survey-form" class="space-y-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Full Name *</label>
+                                <input type="text" id="field-name" required class="input-field" placeholder="e.g. Rahul Sharma">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Email Address *</label>
+                                <input type="email" id="field-email" required class="input-field" placeholder="you@example.com">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">City (India)</label>
+                            <input type="text" id="field-city" class="input-field" placeholder="e.g. Mumbai, Bangalore (optional)">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Address</label>
+                            <textarea id="field-address" rows="2" class="input-field resize-none" placeholder="Postal or residential address (optional)"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Relation to Developer *</label>
+                            <div class="relative">
+                                <select id="field-relation" required class="input-field appearance-none">
+                                    <option value="" disabled selected>Select an option...</option>
+                                    <option value="friend_family">Friend / Family</option>
+                                    <option value="colleague">Colleague / Industry Peer</option>
+                                    <option value="social_follower">Social Media Follower</option>
+                                    <option value="random_user">Random Beta User / Found Online</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                                    <i class="fa-solid fa-chevron-down text-sm"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Why do you want to test FINQORA? *</label>
+                            <textarea id="field-reason" required rows="3" class="input-field resize-none" placeholder="e.g. I need a better way to track my expenses without my data being sold..."></textarea>
+                        </div>
+                        
+                        <div class="bg-brand-50 border border-brand-100 rounded-lg p-4 mt-2">
+                            <label class="flex items-start gap-3">
+                                <input type="checkbox" id="field-consent" required class="mt-1 w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500">
+                                <span class="text-xs text-slate-600">
+                                    I agree to the Beta Testing Terms. I understand this app is in development and I should not rely on it as my sole financial record. Data is stored locally on device.
+                                </span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="w-full bg-slate-900 hover:bg-black text-white font-medium py-3.5 px-4 rounded-lg transition-all shadow-md">
+                            Submit Application & Get Access
+                        </button>
+                    </form>
+                </div>
+            `,
+            dashboard: `
+                <div class="animate-slide-up space-y-6">
+                    <!-- Welcome Card -->
+                    <div class="glass-card rounded-2xl p-6 sm:p-8 border-t-4 border-t-brand-500">
+                        <div class="flex items-start justify-between flex-wrap gap-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900" id="dash-welcome">Welcome to the Beta!</h2>
+                                <p class="text-slate-500 mt-1">Your account is active. You can now download the beta build.</p>
+                            </div>
+                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                Approved
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Downloads Section -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Android Build -->
+                        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                            <div class="flex items-center gap-4 mb-4">
+                                <div class="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center text-2xl">
+                                    <i class="fa-brands fa-android"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-900">Android Beta</h3>
+                                    <p class="text-xs text-slate-500">Version 1.0.0-beta1 • 14.2 MB</p>
+                                </div>
+                            </div>
+                            <button onclick="downloadApp('android')" class="w-full border-2 border-brand-500 text-brand-600 hover:bg-brand-50 font-medium py-2.5 rounded-lg transition-colors flex justify-center items-center gap-2">
+                                <i class="fa-solid fa-download"></i> Download APK
+                            </button>
+                        </div>
+
+                        <!-- Play Store Testing -->
+                        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow opacity-60 relative">
+                            <div class="absolute top-2 right-2 bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded font-medium">Coming Soon</div>
+                            <div class="flex items-center gap-4 mb-4">
+                                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-2xl">
+                                    <i class="fa-brands fa-google-play"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-900">Play Store Track</h3>
+                                    <p class="text-xs text-slate-500">Internal Testing Track</p>
+                                </div>
+                            </div>
+                            <button disabled class="w-full bg-slate-100 text-slate-400 font-medium py-2.5 rounded-lg cursor-not-allowed flex justify-center items-center gap-2">
+                                <i class="fa-solid fa-link"></i> Join Track
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2"><i class="fa-solid fa-list-check text-brand-500 mr-2"></i> Testing Instructions</h3>
+                        <div class="space-y-4 text-sm text-slate-600">
+                            <div class="flex gap-3">
+                                <div class="w-6 h-6 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold shrink-0">1</div>
+                                <p><strong>Install the APK:</strong> You may need to enable "Install from Unknown Sources" in your Android security settings.</p>
+                            </div>
+                            <div class="flex gap-3">
+                                <div class="w-6 h-6 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold shrink-0">2</div>
+                                <p><strong>Test Offline Mode:</strong> FINQORA is local-first. Try turning off Wi-Fi/Data and verify you can still add transactions and view reports.</p>
+                            </div>
+                            <div class="flex gap-3">
+                                <div class="w-6 h-6 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold shrink-0">3</div>
+                                <p><strong>Test Privacy:</strong> Notice that no login is required in the app itself. Test the "Export" feature to ensure your data stays in your control.</p>
+                            </div>
+                            <div class="flex gap-3">
+                                <div class="w-6 h-6 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold shrink-0">4</div>
+                                <p><strong>Report Bugs:</strong> If you experience crashes, take a screenshot and note what you were doing. <a href="#" class="text-brand-600 hover:underline">Submit feedback here.</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        const showLoading = (text = "Loading...") => {
+            document.getElementById('loading-text').innerText = text;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        };
+
+        const hideLoading = () => {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        };
+
+        const showToast = (message, type = 'info') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            let bgColor = 'bg-slate-800';
+            let icon = 'fa-info-circle';
+
+            if (type === 'success') {
+                bgColor = 'bg-brand-600';
+                icon = 'fa-check-circle';
+            } else if (type === 'error') {
+                bgColor = 'bg-red-500';
+                icon = 'fa-exclamation-circle';
+            }
+
+            toast.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-slide-up transform transition-all duration-300 z-50 min-w-[250px]`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        const renderUI = (state) => {
+            const content = document.getElementById('app-content');
+            content.innerHTML = templates[state];
+
+            // Attach event listeners based on current view
+            if (state === 'auth') {
+                document.getElementById('auth-form').addEventListener('submit', handleAuthSubmit);
+                document.getElementById('auth-switch-btn').addEventListener('click', handleAuthSwitch);
+                document.getElementById('google-login-btn').addEventListener('click', handleGoogleLogin);
+                document.getElementById('forgot-password-btn').addEventListener('click', () => renderUI('forgotPassword'));
+            } else if (state === 'forgotPassword') {
+                document.getElementById('forgot-password-form').addEventListener('submit', handlePasswordReset);
+                document.getElementById('back-to-login-btn').addEventListener('click', () => renderUI('auth'));
+            } else if (state === 'welcome') {
+                document.getElementById('start-application-btn').addEventListener('click', () => {
+                    renderUI('survey');
+                });
+            } else if (state === 'survey') {
+                document.getElementById('beta-survey-form').addEventListener('submit', handleSurveySubmit);
+            } else if (state === 'dashboard') {
+                document.getElementById('dash-welcome').innerText = `Welcome, ${userProfile.name.split(' ')[0]}!`;
+            }
+        };
+
+        const updateNav = () => {
+            const navUserInfo = document.getElementById('nav-user-info');
+            const navEmail = document.getElementById('nav-email');
+
+            if (currentUser && userProfile) {
+                navUserInfo.classList.remove('hidden');
+                navEmail.innerText = userProfile.email;
+            } else {
+                navUserInfo.classList.add('hidden');
+            }
+        };
+
+        let authMode = 'signIn';
+
+        const handleAuthSwitch = () => {
+            const form = document.getElementById('auth-form');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const switchButton = document.getElementById('auth-switch-btn');
+            const help = document.getElementById('auth-help');
+            const passwordInput = document.getElementById('auth-password');
+            const nameGroup = document.getElementById('auth-name-group');
+
+            authMode = authMode === 'signIn' ? 'signUp' : 'signIn';
+            nameGroup.classList.toggle('hidden', authMode === 'signIn');
+            document.getElementById('auth-name').required = authMode === 'signUp';
+            submitButton.innerText = authMode === 'signIn' ? 'Sign in' : 'Create account';
+            switchButton.innerText = authMode === 'signIn' ? 'Create an account' : 'Sign in';
+            help.innerText = authMode === 'signIn'
+                ? 'Use 6 or more characters for your password.'
+                : 'Your full name is required to create an account.';
+            passwordInput.autocomplete = authMode === 'signIn' ? 'current-password' : 'new-password';
+        };
+
+        const handleAuthSubmit = async (event) => {
+            event.preventDefault();
+            const name = document.getElementById('auth-name').value.trim();
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+
+            if (authMode === 'signUp' && !name) {
+                showToast("Please enter your full name.", "error");
+                return;
+            }
+
+            if (!email || !password || password.length < 6) {
+                showToast("Enter a valid email and a password with at least 6 characters.", "error");
+                return;
+            }
+
+            showLoading(authMode === 'signIn' ? "Signing in..." : "Creating account...");
+
+            try {
+                let userCredential;
+                if (authMode === 'signIn') {
+                    userCredential = await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await updateProfile(userCredential.user, { displayName: name });
+                    authName = name;
+                }
+
+                if (authMode === 'signIn') {
+                    authName = userCredential.user.displayName || email.split('@')[0];
+                }
+            } catch (error) {
+                console.error("Authentication error:", error);
+                showToast(error.message.replace('Firebase: ', ''), "error");
+            } finally {
+                hideLoading();
+            }
+        };
+
+        const handleGoogleLogin = async () => {
+            showLoading("Connecting to Google...");
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                authName = result.user.displayName || result.user.email.split('@')[0];
+                showToast("Signed in with Google.", "success");
+            } catch (error) {
+                console.error("Google login error:", error);
+                showToast(error.message.replace('Firebase: ', ''), "error");
+            } finally {
+                hideLoading();
+            }
+        };
+
+        const handlePasswordReset = async (event) => {
+            event.preventDefault();
+            const email = document.getElementById('forgot-email').value.trim();
+
+            if (!email) {
+                showToast("Enter your email address.", "error");
+                return;
+            }
+
+            showLoading("Sending reset email...");
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showToast("Password reset email sent.", "success");
+                renderUI('auth');
+            } catch (error) {
+                console.error("Password reset error:", error);
+                showToast(error.message.replace('Firebase: ', ''), "error");
+            } finally {
+                hideLoading();
+            }
+        };
+
+        const checkExistingProfile = async (uid) => {
+            if (!uid) return;
+            try {
+                // Rule 1 Strict Path: /artifacts/{appId}/users/{userId}/{collectionName}
+                const profileRef = doc(db, 'artifacts', appId, 'users', uid, 'beta_applications', 'survey_data');
+                const docSnap = await getDoc(profileRef);
+
+                if (docSnap.exists()) {
+                    userProfile = docSnap.data();
+                    updateNav();
+                    renderUI('dashboard');
+                } else {
+                    renderUI('welcome');
+                }
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+                // If permission error or network error, fallback to welcome
+                renderUI('welcome');
+            }
+        };
+
+        const handleSurveySubmit = async (e) => {
+            e.preventDefault();
+
+            if (!currentUser) {
+                showToast("Authentication error. Please refresh.", "error");
+                return;
+            }
+
+            const name = document.getElementById('field-name').value.trim();
+            const email = document.getElementById('field-email').value.trim();
+            const city = document.getElementById('field-city').value.trim();
+            const address = document.getElementById('field-address').value.trim();
+            const relation = document.getElementById('field-relation').value;
+            const reason = document.getElementById('field-reason').value.trim();
+
+            if (!name || !email || !relation || !reason) {
+                showToast("Please fill all required fields.", "error");
+                return;
+            }
+
+            showLoading("Saving your application...");
+
+            try {
+                // Rule 1 Strict Path: /artifacts/{appId}/users/{userId}/{collectionName}
+                const profileRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'beta_applications', 'survey_data');
+
+                const profileData = {
+                    name,
+                    email,
+                    city,
+                    address,
+                    relation,
+                    reason,
+                    status: 'approved',
+                    createdAt: serverTimestamp()
+                };
+
+                await setDoc(profileRef, profileData);
+                userProfile = profileData;
+                updateNav();
+
+                const worksheet = XLSX.utils.json_to_sheet([profileData]);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'FINQORA Beta Application');
+                const excelData = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                const excelBlob = new Blob([excelData], {
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                });
+                const downloadLink = document.createElement('a');
+                downloadLink.href = URL.createObjectURL(excelBlob);
+                downloadLink.download = `FINQORA_Beta_Application_${name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.xlsx`;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                downloadLink.remove();
+                setTimeout(() => URL.revokeObjectURL(downloadLink.href), 1000);
+
+                const whatsappMessage = encodeURIComponent(
+                    `Hello FINQORA, my beta application has been submitted.\n\nName: ${name}\nEmail: ${email}\nCity: ${city || 'Not provided'}\nAddress: ${address || 'Not provided'}\nRelation: ${relation}\nReason: ${reason}`
+                );
+                const whatsappUrl = `https://wa.me/919120920817?text=${whatsappMessage}`;
+
+                showToast("Application submitted, Excel downloaded, and WhatsApp opened.", "success");
+                setTimeout(() => {
+                    window.location.href = whatsappUrl;
+                }, 1200);
+                renderUI('dashboard');
+
+            } catch (error) {
+                console.error("Error saving survey:", error);
+                showToast("Failed to submit. Please try again.", "error");
+            } finally {
+                hideLoading();
+            }
+        };
+
+        // Make functions globally available for inline HTML handlers
+        window.downloadApp = (platform) => {
+            if (platform === 'android') {
+                showToast("Downloading FINQORA Beta APK...", "info");
+                // Mock download action
+                setTimeout(() => {
+                    showToast("Download started.", "success");
+                }, 1000);
+            }
+        };
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                showLoading("Logging out...");
+                await signOut(auth);
+                userProfile = null;
+                updateNav();
+                renderUI('auth');
+                showToast("Logged out successfully.", "success");
+            } catch (error) {
+                showToast("Error logging out.", "error");
+            } finally {
+                hideLoading();
+            }
+        });
+
+        let authStateInitialized = false;
+        const loadingTimeout = setTimeout(() => {
+            if (authStateInitialized || !firebaseReady) return;
+            hideLoading();
+            renderUI('auth');
+            showToast("Authentication is taking too long. Please check your internet connection.", "info");
+        }, 15000);
+
+        if (firebaseReady) {
+            onAuthStateChanged(auth, async (user) => {
+                authStateInitialized = true;
+                clearTimeout(loadingTimeout);
+
+                if (user) {
+                    currentUser = user;
+                    try {
+                        await checkExistingProfile(user.uid);
+                    } finally {
+                        hideLoading();
+                    }
+                } else {
+                    currentUser = null;
+                    userProfile = null;
+                    updateNav();
+                    hideLoading();
+                    renderUI('auth');
+                }
+            });
+        }
+
+        window.addEventListener('beforeunload', () => clearTimeout(loadingTimeout));
+
+        const runCinematicPreloader = () => new Promise((resolve) => {
+            const container = document.getElementById('cinematic-preloader');
+            const finqora = document.getElementById('preloader-finqora');
+            const yash = document.getElementById('preloader-yash');
+
+            setTimeout(() => {
+                finqora.style.opacity = '1';
+            }, 500);
+
+            setTimeout(() => {
+                finqora.style.opacity = '0';
+            }, 2500);
+
+            setTimeout(() => {
+                yash.style.opacity = '1';
+            }, 3500);
+
+            setTimeout(() => {
+                yash.style.opacity = '0';
+            }, 5500);
+
+            setTimeout(() => {
+                container.style.opacity = '0';
+                setTimeout(() => {
+                    container.style.display = 'none';
+                    resolve();
+                }, 1000);
+            }, 6500);
+        });
+
+        // Bootstrap
+        window.onload = async () => {
+            await runCinematicPreloader();
+            renderUI('loading');
+            if (!firebaseReady) {
+                renderUI('auth');
+                hideLoading();
+            }
+        };
+
+    </script>
+</body>
+
+</html>
