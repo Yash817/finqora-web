@@ -813,13 +813,18 @@
             }, 6500);
         });
 
-        // Bootstrap
+        // Bootstrap with FIX
         window.onload = async () => {
             await runCinematicPreloader();
-            renderUI('loading');
+            
             if (!firebaseReady) {
                 renderUI('auth');
                 hideLoading();
+                return;
+            }
+
+            if (!authStateInitialized) {
+                renderUI('loading');
             }
         };
 
